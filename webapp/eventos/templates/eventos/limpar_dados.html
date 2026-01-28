@@ -1,0 +1,111 @@
+{% extends 'eventos/base.html' %}
+
+{% block title %}Limpar Dados{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h3 class="mb-0"><i class="bi bi-broom"></i> Limpeza de Dados</h3>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}x-circle{% else %}info-circle{% endif %}"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <p class="lead">
+                    Execute operações de limpeza e tratamento nos dados dos participantes.
+                </p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Operações Disponíveis</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="remover_duplicados" id="duplicados">
+                                <label class="form-check-label" for="duplicados">
+                                    <strong>Remover Duplicados</strong>
+                                    <p class="text-muted mb-0 small">Remove participantes duplicados baseado em email</p>
+                                </label>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="validar_emails" id="emails">
+                                <label class="form-check-label" for="emails">
+                                    <strong>Validar Emails</strong>
+                                    <p class="text-muted mb-0 small">Verifica se todos os emails são válidos</p>
+                                </label>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="normalizar_nomes" id="nomes">
+                                <label class="form-check-label" for="nomes">
+                                    <strong>Normalizar Nomes</strong>
+                                    <p class="text-muted mb-0 small">Padroniza capitalização dos nomes</p>
+                                </label>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="limpar_telefones" id="telefones">
+                                <label class="form-check-label" for="telefones">
+                                    <strong>Limpar Telefones</strong>
+                                    <p class="text-muted mb-0 small">Remove caracteres especiais dos telefones</p>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Atenção:</strong> Esta operação afetará todos os participantes no banco de dados.
+                        Certifique-se de ter um backup antes de prosseguir.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning btn-lg">
+                            <i class="bi bi-broom"></i> Executar Limpeza
+                        </button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Estatísticas -->
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Estatísticas Atuais</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <h3 class="text-primary">{{ total_participantes }}</h3>
+                        <p class="text-muted">Total de Participantes</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h3 class="text-success">{{ emails_validos }}</h3>
+                        <p class="text-muted">Emails Válidos</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h3 class="text-warning">{{ possiveveis_duplicados }}</h3>
+                        <p class="text-muted">Possíveis Duplicados</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

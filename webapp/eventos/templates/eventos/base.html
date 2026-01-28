@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Eventos{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 15px;
+            margin: 5px 0;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card {
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-icon {
+            font-size: 3rem;
+            opacity: 0.3;
+        }
+        
+        .badge-custom {
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        
+        .btn-custom {
+            border-radius: 25px;
+            padding: 10px 25px;
+        }
+        
+        .navbar-custom {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-2 d-md-block sidebar">
+                <div class="text-center mb-4">
+                    <h4><i class="bi bi-calendar-event"></i> Eventos</h4>
+                </div>
+                <div class="nav flex-column">
+                    <a class="nav-link" href="{% url 'dashboard' %}">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a class="nav-link" href="{% url 'listar_eventos' %}">
+                        <i class="bi bi-calendar-check"></i> Eventos
+                    </a>
+                    <a class="nav-link" href="{% url 'listar_participantes' %}">
+                        <i class="bi bi-people-fill"></i> Participantes
+                    </a>
+                    <a class="nav-link" href="{% url 'importar_excel' %}">
+                        <i class="bi bi-file-earmark-excel"></i> Importar Excel
+                    </a>
+                    <a class="nav-link" href="{% url 'estatisticas' %}">
+                        <i class="bi bi-graph-up"></i> Estatísticas
+                    </a>
+                    <hr style="border-color: rgba(255,255,255,0.2)">
+                    <a class="nav-link" href="{% url 'central_dados' %}">
+                        <i class="bi bi-database"></i> Central de Dados
+                    </a>
+                    <a class="nav-link" href="{% url 'historico_importacoes' %}">
+                        <i class="bi bi-clock-history"></i> Histórico
+                    </a>
+                    <a class="nav-link" href="{% url 'comparar_importacoes' %}">
+                        <i class="bi bi-arrow-left-right"></i> Comparar
+                    </a>
+                    <hr style="border-color: rgba(255,255,255,0.2)">
+                    <a class="nav-link" href="/admin/">
+                        <i class="bi bi-gear"></i> Admin Django
+                    </a>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-10 ms-sm-auto px-md-4">
+                <nav class="navbar navbar-expand-lg navbar-custom mb-4">
+                    <div class="container-fluid">
+                        <span class="navbar-brand">
+                            {% block page_title %}Sistema de Gestão{% endblock %}
+                        </span>
+                        <div class="d-flex">
+                            {% if user.is_authenticated %}
+                                <span class="me-3">
+                                    <i class="bi bi-person-circle"></i> {{ user.username }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Content -->
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

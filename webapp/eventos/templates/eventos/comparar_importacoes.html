@@ -1,0 +1,213 @@
+{% extends 'eventos/base.html' %}
+
+{% block title %}Comparar Importações{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1><i class="bi bi-arrow-left-right"></i> Comparar Importações</h1>
+    <p class="text-muted">Compare dados entre diferentes importações para identificar mudanças</p>
+</div>
+
+<!-- Seletor de Importações -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-ui-checks"></i> Selecione as Importações</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label"><strong>Importação 1 (Base)</strong></label>
+                <select name="importacao1" class="form-select" required>
+                    <option value="">Selecione...</option>
+                    {% for imp in importacoes %}
+                    <option value="{{ imp.id }}" {% if request.GET.importacao1 == imp.id|stringformat:"s" %}selected{% endif %}>
+                        {{ imp.arquivo_original }} - {{ imp.criado_em|date:"d/m/Y H:i" }} ({{ imp.linhas_importadas }} registros)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2 text-center">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <i class="bi bi-arrow-left-right text-primary" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+            
+            <div class="col-md-5">
+                <label class="form-label"><strong>Importação 2 (Comparação)</strong></label>
+                <select name="importacao2" class="form-select" required>
+                    <option value="">Selecione...</option>
+                    {% for imp in importacoes %}
+                    <option value="{{ imp.id }}" {% if request.GET.importacao2 == imp.id|stringformat:"s" %}selected{% endif %}>
+                        {{ imp.arquivo_original }} - {{ imp.criado_em|date:"d/m/Y H:i" }} ({{ imp.linhas_importadas }} registros)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-12 text-center">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-search"></i> Comparar
+                </button>
+                <a href="{% url 'historico_importacoes' %}" class="btn btn-secondary btn-lg">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resultado da Comparação -->
+{% if comparacao %}
+<div class="row">
+    <!-- Informações da Importação 1 -->
+    <div class="col-md-5">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-excel"></i> Importação Base</h5>
+            </div>
+            <div class="card-body">
+                <h6><strong>{{ comparacao.importacao1.arquivo_original }}</strong></h6>
+                <hr>
+                <p><i class="bi bi-calendar"></i> <strong>Data:</strong> {{ comparacao.importacao1.criado_em|date:"d/m/Y H:i" }}</p>
+                <p><i class="bi bi-person"></i> <strong>Usuário:</strong> {{ comparacao.importacao1.usuario.username }}</p>
+                <p><i class="bi bi-hash"></i> <strong>Registros:</strong> {{ comparacao.importacao1.linhas_importadas }}</p>
+                {% if comparacao.importacao1.observacoes %}
+                <p><i class="bi bi-chat-left-text"></i> <strong>Obs:</strong> {{ comparacao.importacao1.observacoes }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Comparação Central -->
+    <div class="col-md-2 text-center">
+        <div class="card bg-light h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <i class="bi bi-arrow-left-right text-primary" style="font-size: 3rem;"></i>
+                <hr>
+                <div class="mt-3">
+                    <h6 class="text-muted">Diferença</h6>
+                    {% if comparacao.diferenca_registros > 0 %}
+                    <h3 class="text-success">+{{ comparacao.diferenca_registros }}</h3>
+                    <p class="text-muted mb-0">registros</p>
+                    {% elif comparacao.diferenca_registros < 0 %}
+                    <h3 class="text-danger">{{ comparacao.diferenca_registros }}</h3>
+                    <p class="text-muted mb-0">registros</p>
+                    {% else %}
+                    <h3 class="text-secondary">0</h3>
+                    <p class="text-muted mb-0">registros</p>
+                    {% endif %}
+                </div>
+                <hr>
+                <div class="mt-3">
+                    <h6 class="text-muted">Tempo Decorrido</h6>
+                    <h3>{{ comparacao.diferenca_tempo }}</h3>
+                    <p class="text-muted mb-0">dias</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informações da Importação 2 -->
+    <div class="col-md-5">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-excel"></i> Importação Comparada</h5>
+            </div>
+            <div class="card-body">
+                <h6><strong>{{ comparacao.importacao2.arquivo_original }}</strong></h6>
+                <hr>
+                <p><i class="bi bi-calendar"></i> <strong>Data:</strong> {{ comparacao.importacao2.criado_em|date:"d/m/Y H:i" }}</p>
+                <p><i class="bi bi-person"></i> <strong>Usuário:</strong> {{ comparacao.importacao2.usuario.username }}</p>
+                <p><i class="bi bi-hash"></i> <strong>Registros:</strong> {{ comparacao.importacao2.linhas_importadas }}</p>
+                {% if comparacao.importacao2.observacoes %}
+                <p><i class="bi bi-chat-left-text"></i> <strong>Obs:</strong> {{ comparacao.importacao2.observacoes }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Análise Detalhada -->
+<div class="card mt-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-bar-chart-line"></i> Análise Detalhada</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 text-center">
+                <div class="card bg-light mb-3">
+                    <div class="card-body">
+                        <h6 class="text-muted">Taxa de Crescimento</h6>
+                        {% widthratio comparacao.diferenca_registros comparacao.importacao1.linhas_importadas 100 as taxa %}
+                        {% if taxa > 0 %}
+                        <h2 class="text-success">+{{ taxa|floatformat:1 }}%</h2>
+                        {% elif taxa < 0 %}
+                        <h2 class="text-danger">{{ taxa|floatformat:1 }}%</h2>
+                        {% else %}
+                        <h2 class="text-secondary">0%</h2>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 text-center">
+                <div class="card bg-light mb-3">
+                    <div class="card-body">
+                        <h6 class="text-muted">Status da Comparação</h6>
+                        {% if comparacao.diferenca_registros > 0 %}
+                        <h2><i class="bi bi-arrow-up-circle text-success" style="font-size: 3rem;"></i></h2>
+                        <p class="text-success mb-0"><strong>Crescimento</strong></p>
+                        {% elif comparacao.diferenca_registros < 0 %}
+                        <h2><i class="bi bi-arrow-down-circle text-danger" style="font-size: 3rem;"></i></h2>
+                        <p class="text-danger mb-0"><strong>Redução</strong></p>
+                        {% else %}
+                        <h2><i class="bi bi-dash-circle text-secondary" style="font-size: 3rem;"></i></h2>
+                        <p class="text-secondary mb-0"><strong>Igual</strong></p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 text-center">
+                <div class="card bg-light mb-3">
+                    <div class="card-body">
+                        <h6 class="text-muted">Média Diária</h6>
+                        {% if comparacao.diferenca_tempo > 0 %}
+                        {% widthratio comparacao.diferenca_registros comparacao.diferenca_tempo 1 as media %}
+                        <h2 class="text-info">{{ media|floatformat:1 }}</h2>
+                        <p class="text-muted mb-0">registros/dia</p>
+                        {% else %}
+                        <h2 class="text-muted">-</h2>
+                        <p class="text-muted mb-0">mesmo dia</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-success mt-4">
+    <i class="bi bi-check-circle"></i>
+    <strong>Comparação realizada com sucesso!</strong> 
+    Use estes dados para entender a evolução do seu sistema ao longo do tempo.
+</div>
+
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-search" style="font-size: 4rem; opacity: 0.3;"></i>
+        <h4 class="mt-3 text-muted">Selecione duas importações para comparar</h4>
+        <p class="text-muted">Escolha as importações acima e clique em "Comparar"</p>
+    </div>
+</div>
+{% endif %}
+
+<div class="alert alert-info mt-4">
+    <i class="bi bi-lightbulb"></i>
+    <strong>Dica:</strong> Compare importações de períodos diferentes para identificar tendências, 
+    crescimento ou problemas nos dados importados.
+</div>
+{% endblock %}

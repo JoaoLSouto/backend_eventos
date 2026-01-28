@@ -1,0 +1,149 @@
+{% extends 'eventos/base.html' %}
+
+{% block title %}Lista de Eventos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-calendar-event"></i> Lista de Eventos</h1>
+    <a href="{% url 'admin:eventos_evento_add' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Novo Evento
+    </a>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="programado" {% if request.GET.status == 'programado' %}selected{% endif %}>Programado</option>
+                    <option value="em_andamento" {% if request.GET.status == 'em_andamento' %}selected{% endif %}>Em Andamento</option>
+                    <option value="concluido" {% if request.GET.status == 'concluido' %}selected{% endif %}>Concluído</option>
+                    <option value="cancelado" {% if request.GET.status == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Categoria</label>
+                <select name="categoria" class="form-select">
+                    <option value="">Todas</option>
+                    {% for categoria in categorias %}
+                    <option value="{{ categoria.id }}" {% if request.GET.categoria|stringformat:"s" == categoria.id|stringformat:"s" %}selected{% endif %}>
+                        {{ categoria.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Buscar</label>
+                <input type="text" name="busca" class="form-control" placeholder="Nome do evento..." value="{{ request.GET.busca }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabela de Eventos -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Data/Hora</th>
+                        <th>Local</th>
+                        <th>Categoria</th>
+                        <th>Vagas</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evento in eventos %}
+                    <tr>
+                        <td><strong>{{ evento.nome }}</strong></td>
+                        <td>{{ evento.data_evento|date:"d/m/Y H:i" }}</td>
+                        <td>{{ evento.local }}</td>
+                        <td><span class="badge bg-info">{{ evento.categoria.nome }}</span></td>
+                        <td>
+                            {{ evento.participantes_confirmados }} / {{ evento.vagas_totais }}
+                            <small class="text-muted">({{ evento.vagas_disponiveis }} livres)</small>
+                        </td>
+                        <td>
+                            {% if evento.status == 'programado' %}
+                                <span class="badge bg-primary">Programado</span>
+                            {% elif evento.status == 'em_andamento' %}
+                                <span class="badge bg-success">Em Andamento</span>
+                            {% elif evento.status == 'concluido' %}
+                                <span class="badge bg-secondary">Concluído</span>
+                            {% else %}
+                                <span class="badge bg-danger">Cancelado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'detalhe_evento' evento.id %}" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'admin:eventos_evento_change' evento.id %}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                            <p class="mt-2">Nenhum evento encontrado</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginação -->
+        {% if eventos.has_other_pages %}
+        <nav aria-label="Navegação de página">
+            <ul class="pagination justify-content-center mb-0 mt-3">
+                {% if eventos.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.categoria %}&categoria={{ request.GET.categoria }}{% endif %}{% if request.GET.busca %}&busca={{ request.GET.busca }}{% endif %}">
+                        Primeira
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ eventos.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.categoria %}&categoria={{ request.GET.categoria }}{% endif %}{% if request.GET.busca %}&busca={{ request.GET.busca }}{% endif %}">
+                        Anterior
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">Página {{ eventos.number }} de {{ eventos.paginator.num_pages }}</span>
+                </li>
+                
+                {% if eventos.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ eventos.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.categoria %}&categoria={{ request.GET.categoria }}{% endif %}{% if request.GET.busca %}&busca={{ request.GET.busca }}{% endif %}">
+                        Próxima
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ eventos.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.categoria %}&categoria={{ request.GET.categoria }}{% endif %}{% if request.GET.busca %}&busca={{ request.GET.busca }}{% endif %}">
+                        Última
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

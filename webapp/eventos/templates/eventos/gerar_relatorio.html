@@ -1,0 +1,165 @@
+{% extends 'eventos/base.html' %}
+
+{% block title %}Gerar Relatório{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="bi bi-file-earmark-bar-graph"></i> Gerador de Relatórios</h3>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}x-circle{% else %}info-circle{% endif %}"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <p class="lead">
+                    Gere relatórios personalizados em diversos formatos.
+                </p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label"><strong>Tipo de Relatório</strong></label>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="tipo" value="completo" id="completo" checked>
+                            <label class="form-check-label" for="completo">
+                                <strong>Relatório Completo</strong>
+                                <p class="text-muted mb-0 small">Todos os eventos e participantes</p>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="tipo" value="eventos" id="eventos">
+                            <label class="form-check-label" for="eventos">
+                                <strong>Apenas Eventos</strong>
+                                <p class="text-muted mb-0 small">Lista de todos os eventos cadastrados</p>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="tipo" value="participantes" id="participantes">
+                            <label class="form-check-label" for="participantes">
+                                <strong>Apenas Participantes</strong>
+                                <p class="text-muted mb-0 small">Lista de todos os participantes</p>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="tipo" value="estatistico" id="estatistico">
+                            <label class="form-check-label" for="estatistico">
+                                <strong>Estatístico</strong>
+                                <p class="text-muted mb-0 small">Análises e gráficos estatísticos</p>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label"><strong>Formato de Saída</strong></label>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="formato" value="excel" id="excel" checked>
+                                    <label class="form-check-label" for="excel">
+                                        <i class="bi bi-file-earmark-excel text-success"></i> Excel (.xlsx)
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="formato" value="csv" id="csv">
+                                    <label class="form-check-label" for="csv">
+                                        <i class="bi bi-filetype-csv text-primary"></i> CSV
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="formato" value="txt" id="txt">
+                                    <label class="form-check-label" for="txt">
+                                        <i class="bi bi-filetype-txt text-secondary"></i> Texto (.txt)
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="formato" value="json" id="json">
+                                    <label class="form-check-label" for="json">
+                                        <i class="bi bi-filetype-json text-warning"></i> JSON
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="titulo" class="form-label"><strong>Título do Relatório</strong></label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="titulo" 
+                               name="titulo" 
+                               placeholder="Ex: Relatório Mensal de Eventos"
+                               value="Relatório de Eventos - {{ today|date:'d/m/Y' }}">
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        O relatório será salvo na pasta <code>relatorios/</code> e também ficará disponível para download.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-download"></i> Gerar e Baixar Relatório
+                        </button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Relatórios Recentes -->
+        {% if relatorios_recentes %}
+        <div class="card mt-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Relatórios Recentes</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for relatorio in relatorios_recentes %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ relatorio.titulo }}</h6>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i> {{ relatorio.data_geracao|date:"d/m/Y H:i" }}
+                                    | <i class="bi bi-file-earmark"></i> {{ relatorio.formato|upper }}
+                                </small>
+                            </div>
+                            <a href="{{ relatorio.arquivo.url }}" class="btn btn-sm btn-outline-primary" download>
+                                <i class="bi bi-download"></i> Baixar
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

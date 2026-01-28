@@ -1,0 +1,277 @@
+{% extends 'eventos/base.html' %}
+
+{% block title %}Central de Dados{% endblock %}
+
+{% block content %}
+<!-- Debug Info -->
+{% if total_participantes > 0 %}
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+    <strong>Debug:</strong> Existem {{ total_participantes }} participantes no banco de dados. 
+    Mostrando {{ page_obj.paginator.count }} após aplicar filtros.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-database"></i> Central de Dados</h1>
+    <div class="btn-group">
+        <button onclick="location.reload()" class="btn btn-secondary" title="Atualizar dados">
+            <i class="bi bi-arrow-clockwise"></i> Atualizar
+        </button>
+        <a href="{% url 'exportar_dados_completo' %}?formato=excel" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+        </a>
+        <a href="{% url 'exportar_dados_completo' %}?formato=csv" class="btn btn-primary">
+            <i class="bi bi-filetype-csv"></i> Exportar CSV
+        </a>
+        <a href="{% url 'exportar_dados_completo' %}?formato=json" class="btn btn-info">
+            <i class="bi bi-filetype-json"></i> Exportar JSON
+        </a>
+    </div>
+</div>
+
+<!-- Estatísticas Resumidas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h3>{{ total_eventos }}</h3>
+                <p class="mb-0">Total de Eventos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h3>{{ total_participantes }}</h3>
+                <p class="mb-0">Total de Participantes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h3>{{ total_categorias }}</h3>
+                <p class="mb-0">Categorias</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h3>{{ total_importacoes }}</h3>
+                <p class="mb-0">Importações</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros Avançados -->
+<div class="card mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros Avançados</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Evento</label>
+                <select name="evento" class="form-select">
+                    <option value="">Todos</option>
+                    {% for evento in eventos %}
+                    <option value="{{ evento.id }}" {% if request.GET.evento == evento.id|stringformat:"s" %}selected{% endif %}>
+                        {{ evento.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">Categoria</label>
+                <select name="categoria" class="form-select">
+                    <option value="">Todas</option>
+                    {% for categoria in categorias %}
+                    <option value="{{ categoria.id }}" {% if request.GET.categoria == categoria.id|stringformat:"s" %}selected{% endif %}>
+                        {{ categoria.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="confirmado" {% if request.GET.status == 'confirmado' %}selected{% endif %}>Confirmado</option>
+                    <option value="pendente" {% if request.GET.status == 'pendente' %}selected{% endif %}>Pendente</option>
+                    <option value="cancelado" {% if request.GET.status == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">Data Início</label>
+                <input type="date" name="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}">
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">Data Fim</label>
+                <input type="date" name="data_fim" class="form-control" value="{{ request.GET.data_fim }}">
+            </div>
+            
+            <div class="col-md-1">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+            
+            <div class="col-md-9">
+                <label class="form-label">Buscar</label>
+                <input type="text" name="busca" class="form-control" placeholder="Nome, email ou código..." value="{{ request.GET.busca }}">
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">Ordenar por</label>
+                <select name="ordem" class="form-select">
+                    <option value="-data_inscricao" {% if request.GET.ordem == '-data_inscricao' %}selected{% endif %}>Mais recentes</option>
+                    <option value="data_inscricao" {% if request.GET.ordem == 'data_inscricao' %}selected{% endif %}>Mais antigos</option>
+                    <option value="nome_completo" {% if request.GET.ordem == 'nome_completo' %}selected{% endif %}>Nome A-Z</option>
+                    <option value="-nome_completo" {% if request.GET.ordem == '-nome_completo' %}selected{% endif %}>Nome Z-A</option>
+                    <option value="evento__nome" {% if request.GET.ordem == 'evento__nome' %}selected{% endif %}>Evento A-Z</option>
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Estatísticas da Visão Atual -->
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Estatísticas da Visão Atual</h5>
+    </div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <h4 class="text-primary">{{ stats_atual.total }}</h4>
+                <p class="text-muted mb-0">Total Filtrado</p>
+            </div>
+            <div class="col-md-3">
+                <h4 class="text-success">{{ stats_atual.confirmados }}</h4>
+                <p class="text-muted mb-0">Confirmados</p>
+            </div>
+            <div class="col-md-3">
+                <h4 class="text-warning">{{ stats_atual.pendentes }}</h4>
+                <p class="text-muted mb-0">Pendentes</p>
+            </div>
+            <div class="col-md-3">
+                <h4 class="text-danger">{{ stats_atual.cancelados }}</h4>
+                <p class="text-muted mb-0">Cancelados</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela de Dados Consolidados -->
+<div class="card">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="bi bi-table"></i> Dados Consolidados ({{ page_obj.paginator.count }} registros)</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Código</th>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Telefone</th>
+                        <th>Evento</th>
+                        <th>Categoria</th>
+                        <th>Data Inscrição</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for participante in page_obj %}
+                    <tr>
+                        <td><code>{{ participante.codigo_ingresso }}</code></td>
+                        <td><strong>{{ participante.nome_completo }}</strong></td>
+                        <td><small>{{ participante.email }}</small></td>
+                        <td>{{ participante.telefone|default:"-" }}</td>
+                        <td>{{ participante.evento.nome }}</td>
+                        <td><span class="badge bg-info">{{ participante.evento.categoria.nome }}</span></td>
+                        <td>{{ participante.data_inscricao|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if participante.status == 'confirmado' %}
+                                <span class="badge bg-success">Confirmado</span>
+                            {% elif participante.status == 'pendente' %}
+                                <span class="badge bg-warning">Pendente</span>
+                            {% else %}
+                                <span class="badge bg-danger">Cancelado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'admin:eventos_participante_change' participante.id %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                            <p class="mt-2">Nenhum registro encontrado</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginação -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Navegação de página" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<div class="alert alert-info mt-4">
+    <i class="bi bi-info-circle"></i>
+    <strong>Dica:</strong> Use os filtros para refinar sua busca e exporte apenas os dados que precisa. 
+    A exportação completa inclui TODOS os dados do sistema.
+</div>
+{% endblock %}

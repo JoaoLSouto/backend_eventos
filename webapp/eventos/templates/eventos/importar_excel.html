@@ -1,0 +1,79 @@
+{% extends 'eventos/base.html' %}
+
+{% block title %}Importar Excel{% endblock %}
+{% block page_title %}📤 Importar Dados do Excel{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-excel"></i> Importar Arquivo Excel</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Formato esperado:</strong> O arquivo Excel deve conter as seguintes colunas:
+                    <ul class="mb-0 mt-2">
+                        <li><code>Nome</code> ou <code>nome</code> - Nome do participante</li>
+                        <li><code>Email</code> ou <code>email</code> - E-mail do participante</li>
+                        <li><code>Telefone</code> ou <code>telefone</code> - Telefone (formato: (XX) XXXXX-XXXX)</li>
+                        <li><code>Status</code> ou <code>status</code> - Status (pendente, confirmado, cancelado)</li>
+                    </ul>
+                </div>
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="evento_id" class="form-label">Evento (opcional)</label>
+                        <select class="form-select" id="evento_id" name="evento_id">
+                            <option value="">Criar novo evento automaticamente</option>
+                            {% for evento in eventos %}
+                            <option value="{{ evento.id }}">{{ evento.nome }} - {{ evento.data_evento|date:"d/m/Y" }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Selecione um evento existente ou deixe em branco para criar um novo</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="arquivo" class="form-label">Selecione o arquivo Excel</label>
+                        <input type="file" class="form-control" id="arquivo" name="arquivo" 
+                               accept=".xlsx,.xls" required>
+                        <div class="form-text">Formatos aceitos: .xlsx, .xls</div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-upload"></i> Importar Dados
+                        </button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Instruções -->
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-question-circle"></i> Instruções de Uso</h5>
+            </div>
+            <div class="card-body">
+                <h6>1. Prepare seu arquivo Excel</h6>
+                <p>Certifique-se de que seu arquivo possui as colunas listadas acima.</p>
+
+                <h6>2. Faça o upload</h6>
+                <p>Clique em "Selecionar arquivo" e escolha seu arquivo Excel.</p>
+
+                <h6>3. Acompanhe a importação</h6>
+                <p>O sistema processará os dados e exibirá um resumo da importação.</p>
+
+                <h6>4. Verifique os resultados</h6>
+                <p>Acesse o <a href="/admin/eventos/importacaoexcel/">painel admin</a> para ver o log detalhado.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

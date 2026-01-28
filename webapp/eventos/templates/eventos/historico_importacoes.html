@@ -1,0 +1,153 @@
+{% extends 'eventos/base.html' %}
+
+{% block title %}Histórico de Importações{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-clock-history"></i> Histórico de Importações</h1>
+    <a href="{% url 'importar_excel' %}" class="btn btn-success">
+        <i class="bi bi-upload"></i> Nova Importação
+    </a>
+</div>
+
+<!-- Estatísticas Gerais -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h3>{{ total_importacoes }}</h3>
+                <p class="mb-0">Total de Importações</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h3>{{ total_registros }}</h3>
+                <p class="mb-0">Registros Importados</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h6 class="mb-2">Primeira Importação</h6>
+                <p class="mb-0">{{ primeira_importacao|date:"d/m/Y" }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h6 class="mb-2">Última Importação</h6>
+                <p class="mb-0">{{ ultima_importacao|date:"d/m/Y" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Timeline de Importações -->
+<div class="card">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="bi bi-list-task"></i> Timeline de Importações</h5>
+    </div>
+    <div class="card-body">
+        {% if page_obj %}
+        <div class="list-group">
+            {% for importacao in page_obj %}
+            <div class="list-group-item">
+                <div class="row align-items-center">
+                    <div class="col-md-1 text-center">
+                        <i class="bi bi-file-earmark-excel text-success" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <div class="col-md-8">
+                        <h5 class="mb-1">
+                            {{ importacao.arquivo_original }}
+                            {% if importacao.sucesso %}
+                                <span class="badge bg-success">Sucesso</span>
+                            {% else %}
+                                <span class="badge bg-danger">Erro</span>
+                            {% endif %}
+                        </h5>
+                        <p class="mb-1 text-muted">
+                            <i class="bi bi-calendar"></i> {{ importacao.criado_em|date:"d/m/Y - H:i" }}
+                            | <i class="bi bi-person"></i> {{ importacao.usuario.username }}
+                            | <i class="bi bi-hash"></i> {{ importacao.linhas_importadas }} registros
+                        </p>
+                        {% if importacao.observacoes %}
+                        <p class="mb-0"><small><i class="bi bi-chat-left-text"></i> {{ importacao.observacoes }}</small></p>
+                        {% endif %}
+                        {% if not importacao.sucesso and importacao.mensagem_erro %}
+                        <div class="alert alert-danger mt-2 mb-0">
+                            <small><strong>Erro:</strong> {{ importacao.mensagem_erro }}</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <div class="btn-group-vertical">
+                            {% if importacao.arquivo %}
+                            <a href="{{ importacao.arquivo.url }}" class="btn btn-sm btn-outline-primary" download>
+                                <i class="bi bi-download"></i> Baixar Arquivo
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'comparar_importacoes' %}?importacao1={{ importacao.id }}" class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-arrow-left-right"></i> Comparar
+                            </a>
+                            <a href="{% url 'admin:eventos_importacaoexcel_change' importacao.id %}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                <i class="bi bi-eye"></i> Detalhes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Paginação -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Navegação de página" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">Primeira</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-inbox" style="font-size: 4rem;"></i>
+            <h4 class="mt-3">Nenhuma importação realizada ainda</h4>
+            <p>Comece importando seu primeiro arquivo Excel!</p>
+            <a href="{% url 'importar_excel' %}" class="btn btn-primary btn-lg mt-3">
+                <i class="bi bi-upload"></i> Importar Agora
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="alert alert-info mt-4">
+    <i class="bi bi-lightbulb"></i>
+    <strong>Dica:</strong> Mantenha um histórico organizado de suas importações para rastrear mudanças e auditar dados.
+    Você pode comparar duas importações diferentes para ver o que mudou ao longo do tempo.
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+pandas==2.2.0
+openpyxl==3.1.2
+sqlalchemy==2.0.25
+python-dotenv==1.0.0
+
+# Django e dependências web
+Django>=5.0.1
+django-import-export>=3.3.5
+django-crispy-forms>=2.1
+crispy-bootstrap5>=2025.6
+pillow>=10.2.0
+whitenoise>=6.6.0
