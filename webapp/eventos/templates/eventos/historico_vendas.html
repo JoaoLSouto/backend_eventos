@@ -1,0 +1,364 @@
+{% extends 'eventos/base.html' %}
+
+{% block title %}Histórico de Vendas{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-receipt"></i> Histórico de Vendas</h1>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="evento" class="form-label">Evento</label>
+                <select class="form-select" id="evento" name="evento">
+                    <option value="">Todos os eventos</option>
+                    {% for evento in eventos %}
+                    <option value="{{ evento.id }}" {% if evento.id|stringformat:"s" == evento_selecionado %}selected{% endif %}>
+                        {{ evento.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label for="data_inicio" class="form-label">Data Início</label>
+                <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+            </div>
+            
+            <div class="col-md-2">
+                <label for="data_fim" class="form-label">Data Fim</label>
+                <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+            </div>
+            
+            <div class="col-md-2">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Todos</option>
+                    <option value="pendente" {% if status_selecionado == "pendente" %}selected{% endif %}>Pendente</option>
+                    <option value="confirmado" {% if status_selecionado == "confirmado" %}selected{% endif %}>Confirmado</option>
+                    <option value="cancelado" {% if status_selecionado == "cancelado" %}selected{% endif %}>Cancelado</option>
+                    <option value="presente" {% if status_selecionado == "presente" %}selected{% endif %}>Presente</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+                <a href="{% url 'historico_vendas' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Estatísticas Resumidas -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <i class="bi bi-cart-check text-primary" style="font-size: 2.5rem;"></i>
+                <h2 class="mt-2">{{ total_vendas }}</h2>
+                <p class="text-muted mb-0">Total de Vendas</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <i class="bi bi-cash-stack text-success" style="font-size: 2.5rem;"></i>
+                <h2 class="mt-2">R$ {{ total_receita|floatformat:2 }}</h2>
+                <p class="text-muted mb-0">Receita Total</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-info">
+            <div class="card-body">
+                <h6 class="text-muted">Vendas por Status</h6>
+                {% for item in vendas_por_status %}
+                <div class="d-flex justify-content-between mb-1">
+                    <span>
+                        {% if item.status == "confirmado" %}
+                            <i class="bi bi-check-circle text-success"></i> Confirmado
+                        {% elif item.status == "pendente" %}
+                            <i class="bi bi-clock text-warning"></i> Pendente
+                        {% elif item.status == "cancelado" %}
+                            <i class="bi bi-x-circle text-danger"></i> Cancelado
+                        {% elif item.status == "presente" %}
+                            <i class="bi bi-person-check text-primary"></i> Presente
+                        {% endif %}
+                    </span>
+                    <strong>{{ item.total }}</strong>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Receita por Evento -->
+{% if receita_por_evento %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-trophy"></i> Top 10 Eventos - Receita</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Evento</th>
+                        <th class="text-center">Quantidade</th>
+                        <th class="text-end">Receita</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in receita_por_evento %}
+                    <tr>
+                        <td><strong>{{ item.evento__nome }}</strong></td>
+                        <td class="text-center">{{ item.quantidade }}</td>
+                        <td class="text-end">R$ {{ item.receita|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Gráficos de Vendas -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Vendas por Dia</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="chartVendasDia"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="bi bi-calendar3"></i> Vendas por Mês</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="chartVendasMes"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Vendas -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Lista de Vendas ({{ total_vendas }} registros)</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Cliente</th>
+                        <th>Evento</th>
+                        <th>Categoria</th>
+                        <th>Status</th>
+                        <th>Tipo</th>
+                        <th class="text-end">Valor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for venda in vendas %}
+                    <tr>
+                        <td>{{ venda.data_inscricao|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <strong>{{ venda.cliente.nome_completo }}</strong><br>
+                            <small class="text-muted">{{ venda.cliente.email }}</small>
+                        </td>
+                        <td>
+                            <a href="{% url 'detalhe_evento' venda.evento.id %}">
+                                {{ venda.evento.nome }}
+                            </a><br>
+                            <small class="text-muted">{{ venda.evento.data_evento|date:"d/m/Y" }}</small>
+                        </td>
+                        <td>
+                            {% if venda.evento.categoria %}
+                            <span class="badge" style="background-color: {{ venda.evento.categoria.cor }};">
+                                {{ venda.evento.categoria.nome }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">Sem categoria</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if venda.status == "confirmado" %}
+                            <span class="badge bg-success">Confirmado</span>
+                            {% elif venda.status == "pendente" %}
+                            <span class="badge bg-warning text-dark">Pendente</span>
+                            {% elif venda.status == "cancelado" %}
+                            <span class="badge bg-danger">Cancelado</span>
+                            {% elif venda.status == "presente" %}
+                            <span class="badge bg-primary">Presente</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ venda.get_tipo_participante_display }}</span>
+                        </td>
+                        <td class="text-end">
+                            <strong>R$ {{ venda.valor_pago|floatformat:2 }}</strong>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                            <p class="mt-2">Nenhuma venda encontrada com os filtros aplicados.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginação -->
+        {% if vendas.has_other_pages %}
+        <nav aria-label="Navegação de páginas">
+            <ul class="pagination justify-content-center">
+                {% if vendas.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if evento_selecionado %}&evento={{ evento_selecionado }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status_selecionado %}&status={{ status_selecionado }}{% endif %}">
+                        Primeira
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ vendas.previous_page_number }}{% if evento_selecionado %}&evento={{ evento_selecionado }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status_selecionado %}&status={{ status_selecionado }}{% endif %}">
+                        Anterior
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">
+                        Página {{ vendas.number }} de {{ vendas.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if vendas.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ vendas.next_page_number }}{% if evento_selecionado %}&evento={{ evento_selecionado }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status_selecionado %}&status={{ status_selecionado }}{% endif %}">
+                        Próxima
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ vendas.paginator.num_pages }}{% if evento_selecionado %}&evento={{ evento_selecionado }}{% endif %}{% if data_inicio %}&data_inicio={{ data_inicio }}{% endif %}{% if data_fim %}&data_fim={{ data_fim }}{% endif %}{% if status_selecionado %}&status={{ status_selecionado }}{% endif %}">
+                        Última
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Scripts para Gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Gráfico de Vendas por Dia
+    const ctxDia = document.getElementById('chartVendasDia').getContext('2d');
+    new Chart(ctxDia, {
+        type: 'line',
+        data: {
+            labels: {{ dias_labels|safe }},
+            datasets: [{
+                label: 'Quantidade de Vendas',
+                data: {{ dias_quantidade|safe }},
+                borderColor: '#17a2b8',
+                backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const index = context.dataIndex;
+                            const receita = {{ dias_receita|safe }}[index];
+                            return 'Receita: R$ ' + receita.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+    
+    // Gráfico de Vendas por Mês
+    const ctxMes = document.getElementById('chartVendasMes').getContext('2d');
+    new Chart(ctxMes, {
+        type: 'bar',
+        data: {
+            labels: {{ meses_labels|safe }},
+            datasets: [{
+                label: 'Quantidade de Vendas',
+                data: {{ meses_quantidade|safe }},
+                backgroundColor: '#ffc107',
+                borderColor: '#e0a800',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const index = context.dataIndex;
+                            const receita = {{ meses_receita|safe }}[index];
+                            return 'Receita: R$ ' + receita.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -2,6 +2,7 @@
 Models para gerenciamento de eventos e participantes
 """
 
+import random
 from django.db import models
 from django.core.validators import EmailValidator, RegexValidator
 from django.utils import timezone
@@ -23,6 +24,17 @@ class Categoria(models.Model):
 
     def __str__(self):
         return self.nome
+
+    def save(self, *args, **kwargs):
+        """Gera cor hexadecimal automaticamente se não foi especificada"""
+        if not self.cor or self.cor == "#007bff":
+            # Gera uma cor hexadecimal aleatória vibrante
+            # Evita cores muito escuras (mínimo de 50 em cada componente)
+            r = random.randint(50, 255)
+            g = random.randint(50, 255)
+            b = random.randint(50, 255)
+            self.cor = f"#{r:02x}{g:02x}{b:02x}"
+        super().save(*args, **kwargs)
 
 
 class Cliente(models.Model):

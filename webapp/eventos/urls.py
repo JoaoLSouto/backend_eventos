@@ -15,6 +15,7 @@ urlpatterns = [
     path("eventos/<int:evento_id>/limpar/", views.limpar_dados, name="limpar_dados"),
     path("eventos/<int:evento_id>/relatorio/", views.gerar_relatorio, name="gerar_relatorio"),
     path("estatisticas/", views.estatisticas, name="estatisticas"),
+    path("historico-vendas/", views.historico_vendas, name="historico_vendas"),
     # Central de Dados
     path("central-dados/", views.central_dados, name="central_dados"),
     path("central-dados/exportar/", views.exportar_dados_completo, name="exportar_dados_completo"),

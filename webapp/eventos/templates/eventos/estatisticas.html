@@ -98,9 +98,9 @@
                                 <td><strong>{{ evento.nome }}</strong></td>
                                 <td><span class="badge bg-info">{{ evento.categoria.nome }}</span></td>
                                 <td>{{ evento.participantes_confirmados }}</td>
-                                <td>{{ evento.vagas_totais }}</td>
+                                <td>{{ evento.capacidade_maxima }}</td>
                                 <td>
-                                    {% widthratio evento.participantes_confirmados evento.vagas_totais 100 as percentual %}
+                                    {% widthratio evento.participantes_confirmados evento.capacidade_maxima 100 as percentual %}
                                     <div class="progress" style="height: 20px;">
                                         <div class="progress-bar {% if percentual >= 90 %}bg-danger{% elif percentual >= 70 %}bg-warning{% else %}bg-success{% endif %}" 
                                              style="width: {{ percentual }}%;">

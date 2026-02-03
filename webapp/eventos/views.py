@@ -93,7 +93,7 @@ def detalhe_evento(request, evento_id):
 
 @login_required
 def importar_excel(request):
-    """Importa dados do Excel"""
+    """Importa dados do Excel ou CSV"""
     if request.method == "POST" and request.FILES.get("arquivo"):
         arquivo = request.FILES["arquivo"]
 
@@ -103,13 +103,29 @@ def importar_excel(request):
                 arquivo=arquivo, nome_arquivo=arquivo.name, usuario=request.user, status="processando"
             )
 
-            # Ler Excel
-            df = pd.read_excel(arquivo)
+            # Ler arquivo (Excel ou CSV)
+            arquivo_nome = arquivo.name.lower()
+            if arquivo_nome.endswith(".csv"):
+                # Tentar diferentes encodings para CSV
+                try:
+                    df = pd.read_csv(arquivo, encoding="utf-8")
+                except UnicodeDecodeError:
+                    try:
+                        arquivo.seek(0)
+                        df = pd.read_csv(arquivo, encoding="latin-1")
+                    except:
+                        arquivo.seek(0)
+                        df = pd.read_csv(arquivo, encoding="cp1252")
+            else:
+                df = pd.read_excel(arquivo)
+
             importacao.total_linhas = len(df)
             importacao.save()
 
             # Processar linhas
             linhas_importadas = 0
+            linhas_atualizadas = 0
+            linhas_novas = 0
             linhas_com_erro = 0
             log = []
 
@@ -154,11 +170,13 @@ def importar_excel(request):
                         "confirmado": "confirmado",
                         "pendente": "pendente",
                         "cancelado": "cancelado",
+                        "presente": "presente",
                     }
                     status = status_map.get(status, "pendente")
 
                     # Criar ou buscar Cliente (baseado no email)
                     from eventos.models import Cliente
+
                     cliente, cliente_created = Cliente.objects.get_or_create(
                         email=email,
                         defaults={
@@ -167,40 +185,53 @@ def importar_excel(request):
                             "cpf": cpf if cpf and cpf != "nan" else None,
                             "cidade": cidade if cidade and cidade != "nan" else "",
                             "estado": estado if estado and estado != "nan" else "",
-                        }
+                        },
                     )
-                    
-                    # Se cliente já existe, atualizar dados se necessário
+
+                    # Se cliente já existe, atualizar dados se novos valores fornecidos
                     if not cliente_created:
+                        atualizado = False
                         # Atualizar nome se fornecido e diferente
-                        if nome and cliente.nome_completo != nome:
+                        if nome and nome != "nan" and cliente.nome_completo != nome:
                             cliente.nome_completo = nome
+                            atualizado = True
                         if telefone and telefone != "nan" and cliente.telefone != telefone:
                             cliente.telefone = telefone
-                        cliente.save()
+                            atualizado = True
+                        if cidade and cidade != "nan" and cliente.cidade != cidade:
+                            cliente.cidade = cidade
+                            atualizado = True
+                        if estado and estado != "nan" and cliente.estado != estado:
+                            cliente.estado = estado
+                            atualizado = True
+                        if atualizado:
+                            cliente.save()
 
-                    # Criar ou atualizar participação (ingresso)
+                    # Criar ou atualizar participação (ingresso) no evento
+                    # update_or_create garante que não haverá duplicatas
                     participante, created = Participante.objects.update_or_create(
                         evento=evento,
                         cliente=cliente,
                         defaults={
                             "tipo_participante": "comum",
-                            "status": status,
-                        }
+                            "status": status,  # Status é sempre atualizado com o do arquivo
+                        },
                     )
-                    
+
                     linhas_importadas += 1
                     if created:
+                        linhas_novas += 1
                         if cliente_created:
-                            log.append(f"Linha {index+1}: Sucesso - {nome} (novo cliente e ingresso)")
+                            log.append(f"✓ Linha {index+1}: {nome} - Novo cliente e ingresso criados (status: {status})")
                         else:
-                            log.append(f"Linha {index+1}: Sucesso - {nome} (novo ingresso)")
+                            log.append(f"✓ Linha {index+1}: {nome} - Novo ingresso criado (status: {status})")
                     else:
-                        log.append(f"Linha {index+1}: Sucesso - {nome} (ingresso atualizado)")
+                        linhas_atualizadas += 1
+                        log.append(f"↻ Linha {index+1}: {nome} - Ingresso atualizado (status: {status})")
 
                 except Exception as e:
                     linhas_com_erro += 1
-                    log.append(f"Linha {index+1}: Erro - {str(e)}")
+                    log.append(f"✗ Linha {index+1}: Erro - {str(e)}")
 
             # Atualizar importação
             importacao.linhas_importadas = linhas_importadas
@@ -210,9 +241,24 @@ def importar_excel(request):
             importacao.processado_em = timezone.now()
             importacao.save()
 
-            messages.success(
-                request, f"Importação concluída! {linhas_importadas} linhas importadas, " f"{linhas_com_erro} com erro."
-            )
+            # Mensagem detalhada de sucesso
+            if linhas_com_erro == 0:
+                messages.success(
+                    request,
+                    f"✓ Importação concluída com sucesso! "
+                    f"Total: {linhas_importadas} registros | "
+                    f"Novos: {linhas_novas} | "
+                    f"Atualizados: {linhas_atualizadas}",
+                )
+            else:
+                messages.warning(
+                    request,
+                    f"Importação concluída com avisos. "
+                    f"Sucesso: {linhas_importadas} | "
+                    f"Novos: {linhas_novas} | "
+                    f"Atualizados: {linhas_atualizadas} | "
+                    f"Erros: {linhas_com_erro}",
+                )
 
         except Exception as e:
             messages.error(request, f"Erro ao importar: {str(e)}")
@@ -331,27 +377,176 @@ def estatisticas(request):
     # Estatísticas gerais
     total_eventos = Evento.objects.count()
     total_participantes = Participante.objects.count()
-    total_receita = Participante.objects.aggregate(total=Sum("valor_pago"))["total"] or 0
+    total_categorias = Categoria.objects.count()
 
-    # Por categoria
+    # Calcular taxa de ocupação
+    eventos_com_vagas = Evento.objects.exclude(capacidade_maxima=0)
+    if eventos_com_vagas.exists():
+        total_confirmados = Participante.objects.filter(evento__in=eventos_com_vagas, status="confirmado").count()
+        total_vagas = sum(e.capacidade_maxima for e in eventos_com_vagas)
+        taxa_ocupacao = (total_confirmados / total_vagas * 100) if total_vagas > 0 else 0
+    else:
+        taxa_ocupacao = 0
+
+    # Eventos por status
+    eventos_por_status = Evento.objects.values("status").annotate(total=Count("id"))
+    eventos_status_labels = []
+    eventos_status_data = []
+    status_dict = dict(Evento.STATUS_CHOICES)
+    for item in eventos_por_status:
+        eventos_status_labels.append(status_dict.get(item["status"], item["status"]))
+        eventos_status_data.append(item["total"])
+
+    # Eventos por categoria
     eventos_por_categoria = Evento.objects.values("categoria__nome").annotate(total=Count("id")).order_by("-total")
+    categorias_labels = []
+    categorias_data = []
+    for item in eventos_por_categoria:
+        categorias_labels.append(item["categoria__nome"] or "Sem Categoria")
+        categorias_data.append(item["total"])
 
-    # Por mês
-    eventos_por_mes = (
-        Evento.objects.extra(select={"mes": "strftime('%%Y-%%m', data_evento)"})
-        .values("mes")
-        .annotate(total=Count("id"))
-        .order_by("mes")
+    # Top eventos com maior participação
+    top_eventos = (
+        Evento.objects.annotate(
+            participantes_confirmados=Count("participantes", filter=Q(participantes__status="confirmado"))
+        )
+        .filter(capacidade_maxima__gt=0)
+        .order_by("-participantes_confirmados")[:10]
     )
 
     context = {
         "total_eventos": total_eventos,
         "total_participantes": total_participantes,
-        "total_receita": total_receita,
-        "eventos_por_categoria": eventos_por_categoria,
-        "eventos_por_mes": eventos_por_mes,
+        "total_categorias": total_categorias,
+        "taxa_ocupacao": taxa_ocupacao,
+        "eventos_status_labels": json.dumps(eventos_status_labels),
+        "eventos_status_data": json.dumps(eventos_status_data),
+        "categorias_labels": json.dumps(categorias_labels),
+        "categorias_data": json.dumps(categorias_data),
+        "top_eventos": top_eventos,
     }
     return render(request, "eventos/estatisticas.html", context)
+
+
+def historico_vendas(request):
+    """Histórico de vendas/ingressos com filtros"""
+    # Filtros
+    evento_id = request.GET.get("evento")
+    data_inicio = request.GET.get("data_inicio")
+    data_fim = request.GET.get("data_fim")
+    status = request.GET.get("status")
+    
+    # Query base
+    vendas = Participante.objects.select_related("evento", "evento__categoria", "cliente").order_by("-data_inscricao")
+    
+    # Aplicar filtros
+    if evento_id:
+        vendas = vendas.filter(evento_id=evento_id)
+    
+    if data_inicio:
+        vendas = vendas.filter(data_inscricao__gte=data_inicio)
+    
+    if data_fim:
+        vendas = vendas.filter(data_inscricao__lte=data_fim)
+    
+    if status:
+        vendas = vendas.filter(status=status)
+    
+    # Estatísticas do filtro aplicado
+    total_vendas = vendas.count()
+    total_receita = vendas.aggregate(total=Sum("valor_pago"))["total"] or 0
+    
+    # Vendas por status - garantir que todos os status apareçam
+    vendas_por_status_query = vendas.values("status").annotate(total=Count("id"))
+    status_dict = {
+        "pendente": 0,
+        "confirmado": 0,
+        "cancelado": 0,
+        "presente": 0,
+    }
+    for item in vendas_por_status_query:
+        if item["status"] in status_dict:
+            status_dict[item["status"]] = item["total"]
+    
+    vendas_por_status = [
+        {"status": "confirmado", "total": status_dict["confirmado"]},
+        {"status": "presente", "total": status_dict["presente"]},
+        {"status": "pendente", "total": status_dict["pendente"]},
+        {"status": "cancelado", "total": status_dict["cancelado"]},
+    ]
+    
+    # Receita por evento (top 10)
+    receita_por_evento = (
+        vendas.values("evento__nome")
+        .annotate(receita=Sum("valor_pago"), quantidade=Count("id"))
+        .order_by("-receita")[:10]
+    )
+    
+    # Vendas por dia (últimos 30 dias ou filtro aplicado)
+    from django.db.models.functions import TruncDate
+    vendas_por_dia = (
+        vendas.annotate(dia=TruncDate("data_inscricao"))
+        .values("dia")
+        .annotate(quantidade=Count("id"), receita=Sum("valor_pago"))
+        .order_by("dia")
+    )
+    
+    # Preparar dados para o gráfico de vendas por dia
+    dias_labels = []
+    dias_quantidade = []
+    dias_receita = []
+    for item in vendas_por_dia:
+        if item["dia"]:
+            dias_labels.append(item["dia"].strftime("%d/%m/%Y"))
+            dias_quantidade.append(item["quantidade"])
+            dias_receita.append(float(item["receita"] or 0))
+    
+    # Vendas por mês
+    from django.db.models.functions import TruncMonth
+    vendas_por_mes = (
+        vendas.annotate(mes=TruncMonth("data_inscricao"))
+        .values("mes")
+        .annotate(quantidade=Count("id"), receita=Sum("valor_pago"))
+        .order_by("mes")
+    )
+    
+    # Preparar dados para o gráfico de vendas por mês
+    meses_labels = []
+    meses_quantidade = []
+    meses_receita = []
+    for item in vendas_por_mes:
+        if item["mes"]:
+            meses_labels.append(item["mes"].strftime("%m/%Y"))
+            meses_quantidade.append(item["quantidade"])
+            meses_receita.append(float(item["receita"] or 0))
+    
+    # Paginação
+    paginator = Paginator(vendas, 50)  # 50 vendas por página
+    page_number = request.GET.get("page")
+    vendas_page = paginator.get_page(page_number)
+    
+    # Lista de eventos para o filtro
+    eventos = Evento.objects.filter(ativo=True).order_by("-data_evento")
+    
+    context = {
+        "vendas": vendas_page,
+        "total_vendas": total_vendas,
+        "total_receita": total_receita,
+        "vendas_por_status": vendas_por_status,
+        "receita_por_evento": receita_por_evento,
+        "eventos": eventos,
+        "evento_selecionado": evento_id,
+        "data_inicio": data_inicio,
+        "data_fim": data_fim,
+        "status_selecionado": status,
+        "dias_labels": json.dumps(dias_labels),
+        "dias_quantidade": json.dumps(dias_quantidade),
+        "dias_receita": json.dumps(dias_receita),
+        "meses_labels": json.dumps(meses_labels),
+        "meses_quantidade": json.dumps(meses_quantidade),
+        "meses_receita": json.dumps(meses_receita),
+    }
+    return render(request, "eventos/historico_vendas.html", context)
 
 
 @login_required
