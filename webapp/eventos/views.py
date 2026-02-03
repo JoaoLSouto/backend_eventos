@@ -222,7 +222,9 @@ def importar_excel(request):
                     if created:
                         linhas_novas += 1
                         if cliente_created:
-                            log.append(f"✓ Linha {index+1}: {nome} - Novo cliente e ingresso criados (status: {status})")
+                            log.append(
+                                f"✓ Linha {index+1}: {nome} - Novo cliente e ingresso criados (status: {status})"
+                            )
                         else:
                             log.append(f"✓ Linha {index+1}: {nome} - Novo ingresso criado (status: {status})")
                     else:
@@ -435,27 +437,27 @@ def historico_vendas(request):
     data_inicio = request.GET.get("data_inicio")
     data_fim = request.GET.get("data_fim")
     status = request.GET.get("status")
-    
+
     # Query base
     vendas = Participante.objects.select_related("evento", "evento__categoria", "cliente").order_by("-data_inscricao")
-    
+
     # Aplicar filtros
     if evento_id:
         vendas = vendas.filter(evento_id=evento_id)
-    
+
     if data_inicio:
         vendas = vendas.filter(data_inscricao__gte=data_inicio)
-    
+
     if data_fim:
         vendas = vendas.filter(data_inscricao__lte=data_fim)
-    
+
     if status:
         vendas = vendas.filter(status=status)
-    
+
     # Estatísticas do filtro aplicado
     total_vendas = vendas.count()
     total_receita = vendas.aggregate(total=Sum("valor_pago"))["total"] or 0
-    
+
     # Vendas por status - garantir que todos os status apareçam
     vendas_por_status_query = vendas.values("status").annotate(total=Count("id"))
     status_dict = {
@@ -467,30 +469,31 @@ def historico_vendas(request):
     for item in vendas_por_status_query:
         if item["status"] in status_dict:
             status_dict[item["status"]] = item["total"]
-    
+
     vendas_por_status = [
         {"status": "confirmado", "total": status_dict["confirmado"]},
         {"status": "presente", "total": status_dict["presente"]},
         {"status": "pendente", "total": status_dict["pendente"]},
         {"status": "cancelado", "total": status_dict["cancelado"]},
     ]
-    
+
     # Receita por evento (top 10)
     receita_por_evento = (
         vendas.values("evento__nome")
         .annotate(receita=Sum("valor_pago"), quantidade=Count("id"))
         .order_by("-receita")[:10]
     )
-    
+
     # Vendas por dia (últimos 30 dias ou filtro aplicado)
     from django.db.models.functions import TruncDate
+
     vendas_por_dia = (
         vendas.annotate(dia=TruncDate("data_inscricao"))
         .values("dia")
         .annotate(quantidade=Count("id"), receita=Sum("valor_pago"))
         .order_by("dia")
     )
-    
+
     # Preparar dados para o gráfico de vendas por dia
     dias_labels = []
     dias_quantidade = []
@@ -500,16 +503,17 @@ def historico_vendas(request):
             dias_labels.append(item["dia"].strftime("%d/%m/%Y"))
             dias_quantidade.append(item["quantidade"])
             dias_receita.append(float(item["receita"] or 0))
-    
+
     # Vendas por mês
     from django.db.models.functions import TruncMonth
+
     vendas_por_mes = (
         vendas.annotate(mes=TruncMonth("data_inscricao"))
         .values("mes")
         .annotate(quantidade=Count("id"), receita=Sum("valor_pago"))
         .order_by("mes")
     )
-    
+
     # Preparar dados para o gráfico de vendas por mês
     meses_labels = []
     meses_quantidade = []
@@ -519,15 +523,15 @@ def historico_vendas(request):
             meses_labels.append(item["mes"].strftime("%m/%Y"))
             meses_quantidade.append(item["quantidade"])
             meses_receita.append(float(item["receita"] or 0))
-    
+
     # Paginação
     paginator = Paginator(vendas, 50)  # 50 vendas por página
     page_number = request.GET.get("page")
     vendas_page = paginator.get_page(page_number)
-    
+
     # Lista de eventos para o filtro
     eventos = Evento.objects.filter(ativo=True).order_by("-data_evento")
-    
+
     context = {
         "vendas": vendas_page,
         "total_vendas": total_vendas,
