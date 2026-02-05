@@ -2,6 +2,80 @@
 
 Sistema completo e profissional para tratamento, manipulação e análise de dados de arquivos Excel utilizando banco de dados SQLite, com interface web Django e painel administrativo.
 
+---
+
+## 📄 Descrição para Currículo / Resume Description
+
+### Português
+
+**Sistema de Gerenciamento de Eventos com Análise de Dados**
+
+Desenvolvi um sistema web completo para gerenciamento de eventos utilizando Django, Python e SQLite. O projeto implementa uma arquitetura dual (CLI + Web) que permite importação, tratamento e análise avançada de dados de participantes através de arquivos Excel.
+
+**Principais Tecnologias e Ferramentas:**
+- Backend: Python 3.x, Django 5.0+, SQLAlchemy ORM
+- Frontend: HTML5, CSS3, Bootstrap 5, Templates Django responsivos
+- Análise de Dados: Pandas, NumPy, OpenPyXL
+- Banco de Dados: SQLite com índices otimizados
+- Gerenciamento: Git, ambiente virtual Python
+
+**Funcionalidades Implementadas:**
+- Sistema completo de CRUD para eventos, categorias e participantes
+- Painel administrativo Django personalizado com interface profissional
+- Importação e validação automática de dados Excel (.xlsx)
+- Sistema de tratamento de dados: remoção de duplicados, validação de emails/telefones, normalização
+- Dashboard com estatísticas em tempo real e métricas de ocupação
+- Geração de relatórios em múltiplos formatos (Excel, CSV, PDF)
+- Sistema de autenticação e permissões
+- Upload e processamento de arquivos via interface web
+- Relacionamentos de dados complexos (Cliente, Evento, Participante)
+- Validação de dados com Django Validators e regex
+
+**Destaque Técnico:**
+- Arquitetura MVT (Model-View-Template) do Django
+- Integração entre módulos CLI Python e aplicação web
+- Uso de propriedades computadas (@property) para cálculos dinâmicos
+- Implementação de índices de banco de dados para otimização de consultas
+- Tratamento estatístico de dados: remoção de outliers, análises descritivas
+- Padrões de projeto: ORM, Repository Pattern, Service Layer
+
+---
+
+### English
+
+**Event Management System with Data Analysis**
+
+Developed a complete web system for event management using Django, Python, and SQLite. The project implements a dual architecture (CLI + Web) that enables import, processing, and advanced analysis of participant data through Excel files.
+
+**Key Technologies and Tools:**
+- Backend: Python 3.x, Django 5.0+, SQLAlchemy ORM
+- Frontend: HTML5, CSS3, Bootstrap 5, Responsive Django Templates
+- Data Analysis: Pandas, NumPy, OpenPyXL
+- Database: SQLite with optimized indexes
+- Management: Git, Python virtual environment
+
+**Implemented Features:**
+- Complete CRUD system for events, categories, and participants
+- Customized Django admin panel with professional interface
+- Automatic Excel file (.xlsx) import and validation
+- Data cleaning system: duplicate removal, email/phone validation, normalization
+- Real-time statistics dashboard with occupancy metrics
+- Multi-format report generation (Excel, CSV, PDF)
+- Authentication and permissions system
+- Web-based file upload and processing
+- Complex data relationships (Client, Event, Participant)
+- Data validation using Django Validators and regex
+
+**Technical Highlights:**
+- Django MVT (Model-View-Template) architecture
+- Integration between Python CLI modules and web application
+- Use of computed properties (@property) for dynamic calculations
+- Database indexing implementation for query optimization
+- Statistical data processing: outlier removal, descriptive analysis
+- Design patterns: ORM, Repository Pattern, Service Layer
+
+---
+
 ## 🌟 Novidade: Interface Web com Django!
 
 ✨ **Agora com sistema web completo!**
