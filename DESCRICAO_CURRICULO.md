@@ -24,9 +24,9 @@ Desenvolvi um sistema web completo para gerenciamento de eventos utilizando Djan
 Desenvolvi um sistema web completo para gerenciamento de eventos que combina uma interface CLI robusta com uma aplicação web moderna baseada em Django. O sistema permite a administração completa de eventos, categorias e participantes, com foco em análise e tratamento de dados.
 
 **Principais Tecnologias:**
-- **Backend:** Python 3.x, Django 5.0+, SQLAlchemy ORM, Pandas, NumPy
+- **Backend:** Python 3.x, Django 5.0+, Django ORM, Pandas, NumPy
 - **Frontend:** HTML5, CSS3, Bootstrap 5, Templates Django responsivos
-- **Banco de Dados:** SQLite com índices otimizados
+- **Banco de Dados:** SQLite com índices otimizados e sqlite3
 - **Análise de Dados:** OpenPyXL, tratamento estatístico, validação automatizada
 - **Ferramentas:** Git, Django Admin customizado, ambiente virtual Python
 
@@ -78,9 +78,9 @@ Developed a complete web system for event management using Django, Python, and S
 Developed a complete web system for event management that combines a robust CLI interface with a modern Django-based web application. The system enables comprehensive administration of events, categories, and participants, with a focus on data analysis and processing.
 
 **Key Technologies:**
-- **Backend:** Python 3.x, Django 5.0+, SQLAlchemy ORM, Pandas, NumPy
+- **Backend:** Python 3.x, Django 5.0+, Django ORM, Pandas, NumPy
 - **Frontend:** HTML5, CSS3, Bootstrap 5, Responsive Django Templates
-- **Database:** SQLite with optimized indexes
+- **Database:** SQLite with optimized indexes and sqlite3
 - **Data Analysis:** OpenPyXL, statistical processing, automated validation
 - **Tools:** Git, Customized Django Admin, Python virtual environment
 

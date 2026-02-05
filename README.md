@@ -13,10 +13,10 @@ Sistema completo e profissional para tratamento, manipulação e análise de dad
 Desenvolvi um sistema web completo para gerenciamento de eventos utilizando Django, Python e SQLite. O projeto implementa uma arquitetura dual (CLI + Web) que permite importação, tratamento e análise avançada de dados de participantes através de arquivos Excel.
 
 **Principais Tecnologias e Ferramentas:**
-- Backend: Python 3.x, Django 5.0+, SQLAlchemy ORM
+- Backend: Python 3.x, Django 5.0+, Django ORM
 - Frontend: HTML5, CSS3, Bootstrap 5, Templates Django responsivos
 - Análise de Dados: Pandas, NumPy, OpenPyXL
-- Banco de Dados: SQLite com índices otimizados
+- Banco de Dados: SQLite com índices otimizados e sqlite3
 - Gerenciamento: Git, ambiente virtual Python
 
 **Funcionalidades Implementadas:**
@@ -48,10 +48,10 @@ Desenvolvi um sistema web completo para gerenciamento de eventos utilizando Djan
 Developed a complete web system for event management using Django, Python, and SQLite. The project implements a dual architecture (CLI + Web) that enables import, processing, and advanced analysis of participant data through Excel files.
 
 **Key Technologies and Tools:**
-- Backend: Python 3.x, Django 5.0+, SQLAlchemy ORM
+- Backend: Python 3.x, Django 5.0+, Django ORM
 - Frontend: HTML5, CSS3, Bootstrap 5, Responsive Django Templates
 - Data Analysis: Pandas, NumPy, OpenPyXL
-- Database: SQLite with optimized indexes
+- Database: SQLite with optimized indexes and sqlite3
 - Management: Git, Python virtual environment
 
 **Implemented Features:**
